@@ -5,22 +5,33 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "server": "nodemon server.js",
-    "start": "node server.js"
+    "server": "nodemon --no-deprecation server.js",
+    "start": "node server.js",
+    "preinstall": "npx npm-force-resolutions"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@clerk/express": "^1.7.7",
+    "@clerk/express": "^1.7.9",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
-    "mongoose": "^8.16.3",
+    "mongoose": "^8.16.4",
     "multer": "^2.0.1",
+    "node-fetch": "3.3.2",
     "nodemon": "^3.1.10",
+    "os-browserify": "^0.3.0",
+    "punycode": "^2.3.1",
     "stripe": "^18.3.0",
-    "svix": "^1.42.0"
+    "svix": "^1.69.0"
+  },
+  "devDependencies": {
+    "npm-force-resolutions": "^0.0.10"
+  },
+  "resolutions": {
+    "node-fetch": "3.3.2",
+    "whatwg-url": "14.0.0"
   }
 }

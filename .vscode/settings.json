@@ -1,0 +1,8 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["/package.json"],
+      "url": "file:///C:/Users/shiva/SHIVAM/projects/LMS FULLSTACK/server/package.schema.json"
+    }
+  ]
+}
