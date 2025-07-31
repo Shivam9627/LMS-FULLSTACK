@@ -3,27 +3,43 @@ import Stripe from "stripe";
 import { Purchase } from "../models/Purchase.js";
 import Course from "../models/Course.js";
 import { CourseProgress } from "../models/CourseProgress.js";
+import { clerkClient } from '@clerk/express'; // Use clerkClient from @clerk/express
 
 //Get User Data
-export const getUserData = async (req, res)=> {
-    try {
-        const userId = req.auth.userId
-        const user = await User.findById(userId)
+export const getUserData = async (req, res) => {
+  try {
+    const userId = req.auth().userId; // Fix deprecation
+    console.log('Fetching user with ID:', userId); // Add logging
+    const user = await User.findById(userId);
 
-        if (!user) {
-            return res.json({ success: false, message: 'User Not Found' })
-        }
-
-        res.json({ success: true, user })
-    } catch (error) {
-        res.json({ success: false, message: error.message })
+    if (!user) {
+      console.log(`User not found in MongoDB: ${userId}`);
+      // Fallback: Fetch from Clerk and create user
+      const clerkUser = await clerkClient.users.getUser(userId);
+      const userData = {
+        _id: clerkUser.id,
+        email: clerkUser.emailAddresses[0]?.emailAddress || '',
+        name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'Unknown User',
+        imageUrl: clerkUser.imageUrl || '',
+        enrolledCourses: [],
+      };
+      console.log('Creating missing user:', userData);
+      const newUser = await User.create(userData);
+      return res.json({ success: true, user: newUser });
     }
-}
+
+    console.log('User found:', user);
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('getUserData Error:', error.message);
+    res.json({ success: false, message: error.message });
+  }
+};
 
 // Users enrolled courses with lecture links
 export const userEnrolledCourses = async(req, res)=>{
     try {
-        const userId = req.auth.userId
+        const userId = req.auth().userId
         const userData = await User.findById(userId).populate('enrolledCourses')
 
         res.json({ success: true, enrolledCourses: userData.enrolledCourses})
@@ -37,7 +53,7 @@ export const purchaseCourse = async (req, res)=>{
     try {
         const { courseId } = req.body
         const { origin } = req.headers
-        const userId = req.auth.userId
+        const userId = req.auth().userId
         const userData = await User.findById(userId)
         const courseData = await Course.findById(courseId)
 
@@ -90,7 +106,7 @@ export const purchaseCourse = async (req, res)=>{
 // Update User Course Progress
 export const updateUserCourseProgress = async (req, res)=>{
     try {
-        const userId = req.auth.userId
+        const userId = req.auth().userId
         const { courseId, lectureId } = req.body
         const progressData = await CourseProgress.findOne({userId, courseId })
 
@@ -118,7 +134,7 @@ export const updateUserCourseProgress = async (req, res)=>{
 // Get User Course Progress
 export const getUserCourseProgress = async (req, res ) =>{
     try {
-        const userId = req.auth.userId
+        const userId = req.auth().userId
         const { courseId, lectureId } = req.body
         const progressData = await CourseProgress.findOne({userId, courseId })
         res.json({success: true, progressData})
@@ -130,7 +146,7 @@ export const getUserCourseProgress = async (req, res ) =>{
 // Add User Ratings to Course
 
 export const addUserRating = async(req, res)=>{
-    const userId = req.auth.userId;
+    const userId = req.auth().userId;
     const { courseId, rating } = req.body;
 
     if (!courseId || !userId || !rating || rating < 1 || rating > 5) {
